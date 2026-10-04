@@ -1,0 +1,336 @@
+# GridSaathi Configuration File
+# Single Source of Truth for all physical parameters, assumptions, and simulation settings.
+# Tagging Legend:
+# - [REAL] Confirmed external data source (e.g. IANA Time Zone Database)
+# - [ASSUMED] Engineering estimate or simulation parameter for benchmarking (with "to verify" notes for unconfirmed specs)
+
+seed: 42  # [ASSUMED] Fixed random seed for reproducibility
+
+location:
+  lat: 12.92           # [ASSUMED] Open-Meteo API coordinates for peri-urban Chennai (Tambaram area), coordinates approximate
+  lon: 80.10           # [ASSUMED] Open-Meteo API coordinates for peri-urban Chennai (Tambaram area), coordinates approximate
+  timezone: "Asia/Kolkata" # [REAL] IANA Time Zone Database
+
+feeder:
+  n_consumers: 100     # [ASSUMED] Target LV transformer consumer load count
+  archetype_mix:
+    household: 80      # [ASSUMED] 80% residential households
+    shop: 15           # [ASSUMED] 15% small commercial shops
+    critical: 5        # [ASSUMED] 5% critical loads (clinic, cold storage)
+  transformer_kva: 100.0 # [ASSUMED] Standard 100 kVA distribution transformer
+  power_factor: 0.95   # [ASSUMED] Distribution grid power factor
+  appliance_ownership:
+    household:
+      lights: 1.00             # [ASSUMED] 100% household lighting
+      fans: 1.00               # [ASSUMED] 100% ceiling fans
+      fridge: 0.75             # [ASSUMED] 75% refrigerator ownership
+      phone_charging: 1.00     # [ASSUMED] 100% mobile charging
+      tv: 0.85                 # [ASSUMED] 85% television ownership
+      cooking_induction: 0.20  # [ASSUMED] 20% induction cooktop adoption
+      washing_machine: 0.35    # [ASSUMED] 35% washing machine ownership
+      iron: 0.50               # [ASSUMED] 50% electric iron ownership
+      ac: 0.25                 # [ASSUMED] 25% air conditioner ownership
+      general_plug_loads: 1.00 # [ASSUMED] 100% general plug loads
+      water_pump: 0.60         # [ASSUMED] 60% overhead tank pumps
+      geyser: 0.40             # [ASSUMED] 40% electric geysers
+      ev_charging: 0.15        # [ASSUMED] 15% 2W/3W EV chargers
+      freezer: 0.05            # [ASSUMED] 5% standalone freezers
+      medical: 0.02            # [ASSUMED] 2% home medical equipment
+      clinic: 0.00             # [ASSUMED] Residential does not host clinics
+      cold_storage: 0.00       # [ASSUMED] Residential does not host cold storage units
+    shop:
+      lights: 1.00             # [ASSUMED] 100% shop lighting
+      fans: 1.00               # [ASSUMED] 100% shop fans
+      fridge: 0.30             # [ASSUMED] 30% shop beverage fridge
+      phone_charging: 1.00     # [ASSUMED] 100% phone charging
+      tv: 0.40                 # [ASSUMED] 40% commercial display TV
+      cooking_induction: 0.05  # [ASSUMED] 5% tea/snack induction stove
+      washing_machine: 0.00    # [ASSUMED] Shops do not have washing machines
+      iron: 0.05               # [ASSUMED] 5% tailor/laundry shop irons
+      ac: 0.40                 # [ASSUMED] 40% commercial AC
+      general_plug_loads: 1.00 # [ASSUMED] 100% shop POS/billing/plug loads
+      freezer: 0.50            # [ASSUMED] 50% commercial ice cream / food display freezers
+      water_pump: 0.20         # [ASSUMED] 20% shop water pumps
+      ev_charging: 0.05        # [ASSUMED] 5% commercial customer EV chargers
+      geyser: 0.00             # [ASSUMED] Shops do not have geysers
+      medical: 0.00            # [ASSUMED] Commercial shops general load
+      clinic: 0.00             # [ASSUMED] General commercial shops
+      cold_storage: 0.00       # [ASSUMED] General commercial shops
+    critical:
+      lights: 1.00             # [ASSUMED] 100% critical facility lighting
+      fans: 1.00               # [ASSUMED] 100% critical facility fans
+      fridge: 0.80             # [ASSUMED] 80% medical storage fridge
+      phone_charging: 1.00     # [ASSUMED] 100% staff phone/device charging
+      tv: 0.50                 # [ASSUMED] 50% waiting room monitors
+      cooking_induction: 0.10  # [ASSUMED] 10% pantry induction stove
+      washing_machine: 0.20    # [ASSUMED] 20% sterilization/linen washing
+      iron: 0.10               # [ASSUMED] 10% linen iron
+      ac: 0.80                 # [ASSUMED] 80% facility AC
+      general_plug_loads: 1.00 # [ASSUMED] 100% general facility equipment
+      medical: 0.60            # [ASSUMED] 60% dedicated medical diagnostic equipment
+      clinic: 0.50             # [ASSUMED] 50% primary healthcare clinic load
+      cold_storage: 0.50       # [ASSUMED] 50% dedicated vaccine cold storage room
+      freezer: 1.00            # [ASSUMED] 100% medical deep freezer storage
+      water_pump: 0.80         # [ASSUMED] 80% dedicated water supply pump
+      geyser: 0.20             # [ASSUMED] 20% clinic hot water geyser
+      ev_charging: 0.10        # [ASSUMED] 10% staff/ambulance EV charging
+
+simulation:
+  # Date selection rule: 'season' selects start_date ('summer' -> 2024-05-01, 'winter' -> 2024-01-15).
+  # Duration rule: 'dev_mode.enabled' selects n_days (true -> dev_n_days=7, false -> full_n_days=30).
+  season: "summer"          # [ASSUMED] Active season choice: "summer" or "winter"
+  season_start_dates:
+    summer: "2024-05-01"    # [ASSUMED] Summer season start date (May)
+    winter: "2024-01-15"    # [ASSUMED] Winter season start date (Jan - exercises geyser load)
+  step_minutes: 15          # [ASSUMED] 15-minute resolution step
+  dev_mode:
+    enabled: true           # [ASSUMED] Quick test mode switch
+    dev_n_days: 7           # [ASSUMED] 7-day quick test window
+    full_n_days: 30         # [ASSUMED] 30-day full evaluation window
+
+sanity:
+  evening_peak_target_pct_of_transformer: [60, 100] # [ASSUMED] Target evening peak load % of transformer capacity (kVA * PF)
+
+mpc:
+  horizon_hours: 24             # [ASSUMED] 24-hour predictive horizon
+  resolve_every_minutes: 15     # [ASSUMED] Full MPC re-solve frequency
+  dev_resolve_every_minutes: 60 # [ASSUMED] Dev mode fast MPC re-solve frequency (hourly)
+  reserve_factor: 0.15          # [ASSUMED] Safety reserve margin for forecast uncertainty
+
+battery:
+  kwh: 50.0            # [ASSUMED] Shared neighborhood battery storage capacity
+  kw: 25.0             # [ASSUMED] Continuous inverter power rating (0.5C)
+  efficiency: 0.90     # [ASSUMED] Round-trip efficiency
+  min_soc: 0.10        # [ASSUMED] Depth of discharge protection limit
+  max_soc: 0.95        # [ASSUMED] Upper state-of-charge safety limit
+
+solar:
+  kwp: 40.0            # [ASSUMED] Shared community solar rooftop capacity
+  tilt: 13.0           # [ASSUMED] Solar panel tilt angle matching latitude (~13 deg)
+  azimuth: 180.0       # [ASSUMED] Standard South orientation (180 deg)
+  losses: 0.14         # [ASSUMED] System derate factor (14%)
+
+outage_baseline:
+  evening_start_hour: 18   # [ASSUMED] Evening ramp start (6 PM)
+  evening_end_hour: 22     # [ASSUMED] Evening ramp end (10 PM)
+  probability: 0.35        # [ASSUMED] Baseline evening grid failure probability
+  duration_hours_mean: 2.0 # [ASSUMED] Average outage duration (hours)
+
+tiers:
+  # Four-tier appliance hierarchy framework
+  tier0_life_critical:
+    - medical
+    - clinic
+    - cold_storage
+  tier1_essential:
+    - lights
+    - fans
+    - fridge
+    - phone_charging
+  tier2_flexible:
+    - water_pump
+    - geyser
+    - freezer
+    - ev_charging
+  tier3_deferrable:
+    - tv
+    - cooking_induction
+    - washing_machine
+    - iron
+    - ac
+    - general_plug_loads
+  essential_load_cap_kw_per_household: 0.3 # [ASSUMED] Max power allocation per household during essential rationing
+
+appliances:
+  # Master archetype-aware appliance specifications:
+  # rated_power_kw_by_archetype: archetype-specific power ratings (household, shop, critical)
+  # daily_hours: typical daily usage hours
+  # evening_window: [start_hour, end_hour]
+  # tier: assigned priority tier
+  lights:
+    rated_power_kw_by_archetype:
+      household: 0.04
+      shop: 0.10
+      critical: 0.25
+    daily_hours: 6.0
+    evening_window: [18, 23]
+    tier: "tier1_essential"
+  fans:
+    rated_power_kw_by_archetype:
+      household: 0.15
+      shop: 0.20
+      critical: 0.40
+    daily_hours: 12.0
+    evening_window: [18, 23]
+    tier: "tier1_essential"
+  fridge:
+    rated_power_kw_by_archetype:
+      household: 0.15
+      shop: 0.30
+      critical: 0.50
+    daily_hours: 10.0
+    evening_window: [18, 23]
+    tier: "tier1_essential"
+  phone_charging:
+    rated_power_kw_by_archetype:
+      household: 0.02
+      shop: 0.04
+      critical: 0.10
+    daily_hours: 4.0
+    evening_window: [18, 23]
+    tier: "tier1_essential"
+  medical:
+    rated_power_kw_by_archetype:
+      household: 0.50
+      shop: 0.50
+      critical: 1.50
+    daily_hours: 24.0
+    evening_window: [18, 23]
+    tier: "tier0_life_critical"
+  clinic:
+    rated_power_kw_by_archetype:
+      household: 0.00
+      shop: 0.00
+      critical: 2.00
+    daily_hours: 12.0
+    evening_window: [18, 22]
+    tier: "tier0_life_critical"
+  cold_storage:
+    rated_power_kw_by_archetype:
+      household: 0.00
+      shop: 0.00
+      critical: 3.50
+    daily_hours: 16.0
+    evening_window: [18, 22]
+    tier: "tier0_life_critical"
+  water_pump:
+    rated_power_kw_by_archetype:
+      household: 0.75
+      shop: 0.75
+      critical: 1.50
+    daily_hours: 2.5
+    evening_window: [17, 20]
+    tier: "tier2_flexible"
+  geyser:
+    rated_power_kw_by_archetype:
+      household: 2.00
+      shop: 0.00
+      critical: 2.00
+    daily_hours: 1.5
+    evening_window: [18, 21]
+    tier: "tier2_flexible"
+  freezer:
+    rated_power_kw_by_archetype:
+      household: 0.20
+      shop: 1.20
+      critical: 2.00
+    daily_hours: 12.0
+    evening_window: [18, 22]
+    tier: "tier2_flexible"
+  ev_charging:
+    rated_power_kw_by_archetype:
+      household: 2.50
+      shop: 3.30
+      critical: 7.20
+    daily_hours: 4.0
+    evening_window: [19, 23]
+    tier: "tier2_flexible"
+  tv:
+    rated_power_kw_by_archetype:
+      household: 0.10
+      shop: 0.15
+      critical: 0.20
+    daily_hours: 4.0
+    evening_window: [18, 22]
+    tier: "tier3_deferrable"
+  cooking_induction:
+    rated_power_kw_by_archetype:
+      household: 1.50
+      shop: 1.50
+      critical: 2.00
+    daily_hours: 2.0
+    evening_window: [18, 21]
+    tier: "tier3_deferrable"
+  washing_machine:
+    rated_power_kw_by_archetype:
+      household: 0.50
+      shop: 0.00
+      critical: 1.00
+    daily_hours: 1.0
+    evening_window: [18, 20]
+    tier: "tier3_deferrable"
+  iron:
+    rated_power_kw_by_archetype:
+      household: 1.00
+      shop: 1.00
+      critical: 1.00
+    daily_hours: 0.5
+    evening_window: [18, 20]
+    tier: "tier3_deferrable"
+  ac:
+    rated_power_kw_by_archetype:
+      household: 1.50
+      shop: 2.00
+      critical: 3.00
+    daily_hours: 8.0
+    evening_window: [18, 23]
+    tier: "tier3_deferrable"
+  general_plug_loads:
+    rated_power_kw_by_archetype:
+      household: 0.20
+      shop: 0.50
+      critical: 1.00
+    daily_hours: 6.0
+    evening_window: [18, 23]
+    tier: "tier3_deferrable"
+
+flexibility:
+  # Archetype-specific virtual battery & load shift parameters
+  # Feasibility constraint enforced: capacity_kwh <= power_kw * max_deferral_min / 60
+  household:
+    water_pump:
+      capacity_kwh: 2.0        # [ASSUMED] Energy buffer of overhead water tank
+      power_kw: 0.75           # [ASSUMED] 1 HP pump rating
+      max_deferral_min: 240    # [ASSUMED] Max 4 hours deferral window
+      tank_capacity_liters: 1000 # [ASSUMED] Overhead tank size
+    geyser:
+      capacity_kwh: 3.0        # [ASSUMED] Hot water thermal storage energy capacity
+      power_kw: 2.0            # [ASSUMED] Standard electric geyser power rating
+      max_deferral_min: 120    # [ASSUMED] Max 2 hours pre-heating shift window
+      target_temp_c: 60        # [ASSUMED] Target water temperature
+      season_months: [11, 12, 1, 2] # [ASSUMED] to verify (Winter months definition)
+    ev_charging:
+      capacity_kwh: 10.0       # [ASSUMED] Shiftable EV battery charge amount
+      power_kw: 2.5            # [ASSUMED] AC Level 1 charger rating
+      max_deferral_min: 360    # [ASSUMED] Max 6 hours shift window overnight
+  shop:
+    freezer:
+      capacity_kwh: 3.0        # [ASSUMED] Thermal storage capacity (to verify: max energy shifted during deferral window)
+      power_kw: 1.2            # [ASSUMED] Commercial display freezer compressor rating
+      max_deferral_min: 180    # [ASSUMED] Max 3 hours thermal coasting window
+      pre_cool_temp_min: -22   # [ASSUMED] Pre-cooling lower limit (°C)
+      temp_target: -18         # [ASSUMED] Standard freezer operating temp (°C)
+  critical:
+    cold_storage:
+      capacity_kwh: 6.0        # [ASSUMED] Thermal energy storage buffer (to verify: max energy shifted during deferral window)
+      power_kw: 3.5            # [ASSUMED] Commercial refrigeration compressor power rating
+      max_deferral_min: 120    # [ASSUMED] Max 2 hours pre-cooling shift window
+      temp_target: 4           # [ASSUMED] Medical storage target temp (°C)
+
+response_rates: # [ASSUMED] Participation fractions of eligible flexible loads
+  - 0.4
+  - 0.6
+  - 0.8
+
+tariffs: # Tariff structure in INR per kWh
+  grid_buy_inr_per_kwh: 7.50          # [ASSUMED] to verify (TNERC tariff order, to verify)
+  grid_sell_inr_per_kwh: 3.00         # [ASSUMED] to verify (TNERC tariff order, to verify)
+  unserved_penalty_inr_per_kwh: 50.00 # [ASSUMED] to verify (Value of Lost Load shadow price)
+
+economics: # Equipment & capital cost benchmark
+  battery_cost_per_kwh_inr: 15000.0  # [ASSUMED] to verify (LFP battery pack cost in India)
+  pv_cost_per_kwp_inr: 45000.0       # [ASSUMED] to verify (Rooftop solar cost per kWp)
+
+fairness:
+  weight: 0.5                          # [ASSUMED] Balance weight between economic dispatch and Jain's index
+  min_guaranteed_supply_kwh: 0.5       # [ASSUMED] Lifeline energy supply per household during grid outage
